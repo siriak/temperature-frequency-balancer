@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# will increase frequency if temperature is that low
+TEMP_LOW=61
+
+# will decrease frequency if temperature is that high
+TEMP_HIGH=64
+
+# starting frequency
+FREQUENCY=3000
+
+CHANGED=true
+
+while true
+do
+	# current package temperature
+	CURR_TEMP=$(sensors | grep Package | cut -d "+" -f2 | cut -d "." -f1)
+
+	# speed up if temperature is too low
+	if [[ $CURR_TEMP -le $TEMP_LOW ]] && [[ $FREQUENCY -lt 3600 ]]
+	then
+		FREQUENCY=$(( $FREQUENCY + 100 ))
+		CHANGED=true
+	fi
+
+	# slow down if temperature is too high
+	if [[ $CURR_TEMP -ge $TEMP_HIGH ]] && [[ $FREQUENCY -gt 1200 ]]
+	then
+		FREQUENCY=$(( $FREQUENCY - 100 ))
+		CHANGED=true
+	fi
+
+	if $CHANGED
+	then
+		CHANGED=false
+		# apply preferences
+		for i in {0..15}
+		do
+			sudo cpufreq-set -c $i -f "${FREQUENCY}MHz"
+		done
+	fi
+
+	sleep "1s"
+done
